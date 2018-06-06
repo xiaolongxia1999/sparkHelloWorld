@@ -1,0 +1,13 @@
+java和scala类型转换的时候，就是需要利用String进行转换
+
+
+另外，在混用这二语言的数据类型的时候，一定要声明是java还是scala里的类。
+比如，两个Double————>声明时，java是java.lang.Double,  scala是Scala.Double
+
+
+
+scala中有java的全套解释器，但java没有scala的。
+
+所以，当在scala中无法利用java的某些语法， 比如double(这是java的基本数据类型），比如double[]  ,在scala中[]表示类型，而不是数组的意思
+
+经验：所以，这种情况，最好把java的代码统一放到 *.java文件中， 而scala要调用java类时，则不必要，但引用类型时，一定要声明是java的还是scala的，

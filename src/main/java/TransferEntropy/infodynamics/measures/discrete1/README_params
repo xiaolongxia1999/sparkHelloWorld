@@ -1,0 +1,98 @@
+离散的传递熵的参数————（最重要的4个，其余是自定义的2个）
+说明：
+
+
+简单点说：如果base=3,k=3,l=2,destEmbeddingDelay=2 ,sourceEmbeddingDelay=3 ,delay=1,计算的离散熵表示：
+
+Xi+1基于的条件是: X——>Xi,Xi-2,Xi-4;
+                  Y——>Yi，Yi-3
+
+delay表示需要预测未来时刻的Xi+delay，此处是Xi+1
+
+其实schreiber提到的核心概念只有k,l，base,delay。
+
+我们基本上默认destEmbeddingDelay=1 ,sourceEmbeddingDelay=1。
+delay的话————也一般为1就好，不过杨哥说，响应间隔为1小时，如果采集是5分钟一次，那delay=12
+
+public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalculatorDiscrete
+	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
+
+	/**
+	 * Counts of (source,dest_next,dest_embedded_past) tuples
+	 */
+	protected int[][][] sourceNextPastCount = null;	// count for (source[n],dest[n+1],dest[n]^k) tuples
+	/**
+	 * Counts of (source,dest_embedded_past) tuples
+	 */
+	protected int[][] sourcePastCount = null;			// count for (source[n],dest[n]^k) tuples
+	/**
+	 * Whether to assume periodic boundary conditions for channels across
+	 *  the boundary of the multidimensional
+	 *  calls supplying observations, e.g.
+	 *  {@link #addObservations(int[][], int)} calls
+	 */
+	protected boolean periodicBoundaryConditions = true;
+
+	/**
+	 * Embedding delay for the destination variable,
+	 *  i.e. time lag between each sample in the past
+	 */
+
+	 //这个其实是说，对应dest列时序（Te(Y->x)中的x) ——该时间序列的时间间隔（步长）是多少——如果是1，表示原时间序列所有数据的间隔为1：
+	 //如果是2，表示时间序列步长为2 ，原数据x的样本是这样的： Xi，Xi-2,Xi-4,Xi-6,Xi-8...
+
+	 这个一般设置为默认的1就好了。（当然如果杨哥有特殊的推荐，比如隔1个小时取1个数，而不是原始采集数据间隔（比如
+
+	 注意：对于原始采集的样本数据————步长=1，表示两条样本的时间间隔，就是原数据的时间间隔。 比如原始数据5分钟采集一次，那么步长=1表示，现在获取的x是5分钟一次的数据；而步长为2，则现在获取的x是10分钟一次的数据（Xi要---Xi-1不要——Xi-2要——Xi-3不要....)
+
+
+	protected int destEmbeddingDelay = 1;
+
+	/**
+	 * Embedding length of the source variable.
+	 * This is "l" in Schreiber's notation.
+	 */
+	protected int sourceHistoryEmbedLength = 1;
+
+	/**
+	 * Embedding delay for the source variable,
+	 *  i.e. time lag between each sample in the past
+	 */
+	protected int sourceEmbeddingDelay = 1;
+
+	/**
+	 * Source-destination delay to consider the information transfer across
+	 */
+	protected int delay = 1;
+
+	/**
+	 * A cached value of base^sourceHistoryEmbedLength
+	 */
+	protected int base_power_l = 1;
+
+	/**
+	 * A cached value of each discrete value left shifted (in "base" counting) by (sourceHistoryEmbedLength-1).
+	 */
+	protected int[] maxShiftedSourceValue = null; // states * (base^(sourceHistoryEmbedLength-1))
+
+	/**
+	 * First time step at which we can take an observation
+	 *  (needs to account for an embedding in the previous steps)
+	 */
+	protected int startObservationTime = 1;
+
+	/**
+	 * Tracks whether the measure has been computed since the last initialisation
+	 */
+	protected boolean estimateComputed = false;
+
+	/**
+	 * User was formerly forced to create new instances through this factory method.
+	 * Retained for backwards compatibility.
+	 *
+	 * @param base
+	 * @param destHistoryEmbedLength
+	 *
+	 * @return a new TransferEntropyCalculator object
+	 * @deprecated
+	 */
